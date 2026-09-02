@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { Platform } from 'react-native';
 
 export default function TabsLayout() {
   return (
@@ -8,7 +9,7 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: true,
         headerStyle: {
-          backgroundColor: '#121214', // Fundo do header superior
+          backgroundColor: '#121214',
           borderBottomWidth: 1,
           borderBottomColor: '#202024',
         },
@@ -19,18 +20,24 @@ export default function TabsLayout() {
           letterSpacing: 0.5,
         },
         tabBarStyle: {
-          backgroundColor: '#121214', // Fundo da barra inferior
+          backgroundColor: '#121214',
           borderTopWidth: 1,
           borderTopColor: '#202024',
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          // 🛠️ Ajuste clínico de altura para dar espaço ao texto e ícone sem quebrar
+          height: Platform.OS === 'ios' ? 88 : 64, 
+          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+          paddingTop: 10,
         },
-        tabBarActiveTintColor: '#00B37E',   // Cor do ícone ativo (Verde Brotherhood)
-        tabBarInactiveTintColor: '#7C7C8A', // Cor do ícone inativo (Cinza)
+        tabBarActiveTintColor: '#00B37E',
+        tabBarInactiveTintColor: '#7C7C8A',
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          marginTop: 2, // Espaço entre o ícone e o texto
+        },
       }}
     >
-      {/* Aba 1: Feed de Tópicos Públicos */}
+      {/* 1. Feed */}
       <Tabs.Screen
         name="index"
         options={{
@@ -40,14 +47,14 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'newspaper' : 'newspaper-outline'} 
-              size={size} 
+              size={22} 
               color={color} 
             />
           ),
         }}
       />
 
-      {/* Aba 2: Caixa de Entrada de Chats Privados */}
+      {/* 2. Conversas */}
       <Tabs.Screen
         name="chats"
         options={{
@@ -57,7 +64,24 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'chatbubbles' : 'chatbubbles-outline'} 
-              size={size} 
+              size={22} 
+              color={color} 
+            />
+          ),
+        }}
+      />
+
+      {/* 3. Perfil */}
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Perfil',
+          headerTitle: '🛡️ Seu Refúgio',
+          tabBarLabel: 'Perfil',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons 
+              name={focused ? 'person' : 'person-outline'} 
+              size={22} 
               color={color} 
             />
           ),
