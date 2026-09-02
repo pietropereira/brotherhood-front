@@ -19,21 +19,36 @@ export default function TabsLayout() {
           fontSize: 18,
           letterSpacing: 0.5,
         },
-        tabBarStyle: {
+       tabBarStyle: {
           backgroundColor: '#121214',
           borderTopWidth: 1,
           borderTopColor: '#202024',
-          // 🛠️ Ajuste clínico de altura para dar espaço ao texto e ícone sem quebrar
-          height: Platform.OS === 'ios' ? 88 : 64, 
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
-          paddingTop: 10,
+          
+          // 🛠️ Calibração de altura cirúrgica para cada plataforma
+          ...Platform.select({
+            web: {
+              height: 56,
+              paddingBottom: 6,
+              paddingTop: 6,
+            },
+            ios: {
+              height: 88,
+              paddingBottom: 28,
+              paddingTop: 10,
+            },
+           android: {
+              height: 76,          // 🤖 Aumentamos para 76 para dar fôlego
+              paddingBottom: 20,   // 🤖 Aumentamos o padding para o texto subir e ficar longe dos botões do celular
+              paddingTop: 10,
+            }
+          }),
         },
         tabBarActiveTintColor: '#00B37E',
         tabBarInactiveTintColor: '#7C7C8A',
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
-          marginTop: 2, // Espaço entre o ícone e o texto
+          marginTop: Platform.OS === 'android' ? 2 : 4, // Alinha o texto logo abaixo do ícone
         },
       }}
     >

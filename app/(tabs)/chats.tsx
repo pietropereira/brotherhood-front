@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
-    Image,
     RefreshControl,
     StyleSheet,
     Text,
@@ -97,11 +96,28 @@ export default function ChatsInbox() {
         onPress={() => router.push(`/chat/${item.id}`)}
         activeOpacity={0.7}
       >
-        {/* Avatar Anônimo */}
-        <Image 
-          source={{ uri: chatPartner.avatarUrl || 'https://dicebear.com' }} 
-          style={styles.avatar} 
-        />
+
+        {/* 🛡️ RENDERIZADOR DE AVATAR COM LETRAS INICIAIS */}
+            <View style={{
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: '#1A3F30', // Fundo verde escuro premium
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: '#00B37E'
+            }}>
+            <Text style={{
+                color: '#00B37E',
+                fontWeight: 'bold',
+                fontSize: 14,
+                textTransform: 'uppercase'
+            }}>
+                {/* Pega as duas primeiras letras do Nickname de forma segura */}
+                {chatPartner?.nickname ? chatPartner.nickname.substring(0, 2) : 'AN'}
+            </Text>
+            </View>
 
         {/* Informações da Conversa */}
         <View style={styles.chatInfo}>

@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
     Alert,
-    Image,
     Platform,
     ScrollView,
     StyleSheet,
@@ -37,10 +36,27 @@ export default function Profile() {
       {/* Bloco Central do Avatar */}
       <View style={styles.profileHeader}>
         <View style={styles.avatarWrapper}>
-          <Image 
-            source={{ uri: user?.avatarUrl || 'https://dicebear.com' }} 
-            style={styles.avatar} 
-          />
+          {/* 🛡️ RENDERIZADOR DE AVATAR COM LETRAS INICIAIS */}
+        <View style={{
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#1A3F30', // Fundo verde escuro premium
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#00B37E'
+        }}>
+        <Text style={{
+            color: '#00B37E',
+            fontWeight: 'bold',
+            fontSize: 14,
+            textTransform: 'uppercase'
+        }}>
+            {/* Pega as duas primeiras letras do Nickname de forma segura */}
+            {user?.nickname ? user.nickname.substring(0, 2) : 'AN'}
+        </Text>
+        </View>
         </View>
         <Text style={styles.nickname}>{user?.nickname || 'Irmão Anônimo'}</Text>
         <View style={styles.statusBadge}>

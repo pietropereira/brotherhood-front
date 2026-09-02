@@ -1,16 +1,16 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { api } from '../../src/services/api';
 
@@ -26,6 +26,7 @@ export default function Register() {
   const avatarUrl = nickname 
     ? `https://dicebear.com{encodeURIComponent(nickname)}`
     : null;
+    
 
   async function handleRegister() {
   if (!email || !password || !nickname) {
