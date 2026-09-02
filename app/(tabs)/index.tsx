@@ -1,4 +1,3 @@
-import { useAuth } from '@/src/context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -7,12 +6,14 @@ import {
   Alert,
   FlatList,
   Image,
+  Platform,
   RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
+import { useAuth } from '../../src/context/AuthContext';
 import { api } from '../../src/services/api';
 
 interface Topic {
@@ -20,6 +21,7 @@ interface Topic {
   title: string;
   content: string;
   category: string;
+  authorId: string;
   createdAt: string;
   author: {
     nickname: string;
@@ -27,17 +29,25 @@ interface Topic {
   };
 }
 
+// Lista de categorias comerciais alinhadas com o debate estratégico
+const CATEGORIES = ['Tudo', 'Depressão', 'Serviço', 'Ansiedade', 'Outros'];
+
 export default function Feed() {
   const [topics, setTopics] = useState<Topic[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('Tudo'); // Estado do filtro ativo
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
   const router = useRouter();
   const { user } = useAuth();
 
-  // Busca os tópicos salvos no backend (porta 3334)
-  async function fetchTopics() {
+  // Busca os tópicos aplicando o filtro de categoria se não for 'Tudo'
+  async function fetchTopics(categoryName = 'Tudo') {
     try {
-      const response = await api.get('/topics');
+      setLoading(true);
+      // Se for diferente de 'Tudo', anexa a query string ex: /topics?category=Ansiedade
+      const url = categoryName === 'Tudo' ? '/topics' : `/topics?category=${encodeURIComponent(categoryName)}`;
+      const response = await api.get(url);
       setTopics(response.data);
     } catch (error) {
       console.error('Erro ao buscar tópicos:', error);
@@ -47,43 +57,41 @@ export default function Feed() {
     }
   }
 
+  // Monitora a troca de abas/filtros para disparar a busca automática no banco
   useEffect(() => {
-    fetchTopics();
-  }, []);
+    fetchTopics(selectedCategory);
+  }, [selectedCategory]);
 
-  // Recarrega o feed quando o usuário arrasta a tela para baixo (Pull to Refresh)
   function handleRefresh() {
     setRefreshing(true);
-    fetchTopics();
+    fetchTopics(selectedCategory);
   }
 
-  // Lógica para abrir o chat privado ao clicar em um desabafo
-async function handleOpenChat(topicId: string) {
-  try {
-    // Dispara o POST para o nosso back criando ou recuperando o chat privado
-    const response = await api.post('/chats', { topicId });
-    
-    // Pegamos o ID da conversa que o backend retornou
-    const { id: chatId } = response.data;
-
-    // Navega nativamente para a tela de chat dinâmico passando o ID na URL
-    router.push(`/chat/${chatId}`);
-  } catch (error: any) {
-    const apiError = error.response?.data?.error || 'Não foi possível iniciar a conversa.';
-    
-    // Trata o caso do cara tentar apoiar o próprio desabafo (regra que criamos no back!)
-    Alert.alert('Aviso', apiError);
+  // Altera a categoria ativa ao clicar no carrossel
+  function handleSelectCategory(categoryName: string) {
+    setSelectedCategory(categoryName);
   }
-}
 
-  // Renderiza cada card de desabafo individualmente
+  async function handleOpenChat(topicId: string) {
+    try {
+      const response = await api.post('/chats', { topicId });
+      const { id: chatId } = response.data;
+      router.push(`/chat/${chatId}`);
+    } catch (error: any) {
+      const apiError = error.response?.data?.error || 'Não foi possível iniciar a conversa.';
+      if (Platform.OS === 'web') {
+        alert(apiError);
+      } else {
+        Alert.alert('Aviso', apiError);
+      }
+    }
+  }
+
   const renderItem = ({ item }: { item: Topic }) => {
-    // 🕵️‍♂️ Checa se o post pertence ao irmão logado
     const isMyOwnPost = item.authorId === user?.id;
 
     return (
       <View style={styles.card}>
-        {/* Header do Card (Dados Anônimos) */}
         <View style={styles.cardHeader}>
           <Image 
             source={{ uri: item.author.avatarUrl || 'https://dicebear.com' }} 
@@ -98,11 +106,9 @@ async function handleOpenChat(topicId: string) {
           </View>
         </View>
 
-        {/* Conteúdo do Desabafo */}
         <Text style={styles.cardTitle}>{item.title}</Text>
         <Text style={styles.cardContent}>{item.content}</Text>
 
-        {/* 🛑 EXIBIÇÃO CONDICIONAL DO BOTÃO DE APOIO */}
         {isMyOwnPost ? (
           <View style={styles.myPostIndicator}>
             <Ionicons name="person-outline" size={14} color="#7C7C8A" />
@@ -118,34 +124,58 @@ async function handleOpenChat(topicId: string) {
     );
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#00B37E" />
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
-      <FlatList
-        data={topics}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#00B37E" />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="documents-outline" size={48} color="#323238" />
-            <Text style={styles.emptyText}>Nenhum desabafo compartilhado ainda.</Text>
-          </View>
-        }
-      />
+      
+      {/* 🧭 CARROSSEL HORIZONTAL DE CATEGORIAS */}
+      <View style={styles.categoriesWrapper}>
+        <FlatList
+          data={CATEGORIES}
+          keyExtractor={(item) => item}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesList}
+          renderItem={({ item }) => {
+            const isSelected = selectedCategory === item;
+            return (
+              <TouchableOpacity
+                style={[styles.categoryFilterButton, isSelected && styles.categoryFilterButtonSelected]}
+                onPress={() => handleSelectCategory(item)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.categoryFilterText, isSelected && styles.categoryFilterTextSelected]}>
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
 
-      {/* 🚀 BOTÃO FLUTUANTE DE NOVO DESABAFO */}
+      {/* LISTAGEM PRINCIPAL DO FEED */}
+      {loading && !refreshing ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00B37E" />
+        </View>
+      ) : (
+        <FlatList
+          data={topics}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#00B37E" />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="documents-outline" size={48} color="#323238" />
+              <Text style={styles.emptyText}>Nenhum desabafo nesta categoria ainda.</Text>
+            </View>
+          }
+        />
+      )}
+
       <TouchableOpacity 
         style={styles.fab} 
         onPress={() => router.push('/new-topic')}
@@ -164,12 +194,43 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#121214',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#121214',
+  },
+  categoriesWrapper: {
+    backgroundColor: '#121214',
+    borderBottomWidth: 1,
+    borderBottomColor: '#202024',
+    paddingVertical: 12,
+  },
+  categoriesList: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  categoryFilterButton: {
+    backgroundColor: '#202024',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#323238',
+  },
+  categoryFilterButtonSelected: {
+    backgroundColor: '#00B37E',
+    borderColor: '#00B37E',
+  },
+  categoryFilterText: {
+    color: '#7C7C8A',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  categoryFilterTextSelected: {
+    color: '#FFF',
   },
   listContainer: {
     padding: 16,
+    paddingBottom: 80, // Garante que o FAB não tampe o último card
   },
   card: {
     backgroundColor: '#202024',
@@ -245,6 +306,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
   },
+  myPostIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 40,
+    backgroundColor: '#1A1A1E',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#29292E',
+    borderStyle: 'dashed',
+  },
+  myPostIndicatorText: {
+    color: '#7C7C8A',
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 6,
+  },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -256,12 +334,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: 'center',
   },
-
   fab: {
     position: 'absolute',
     bottom: 24,
     right: 24,
-    backgroundColor: '#00B37E', // Verde Brotherhood
+    backgroundColor: '#00B37E',
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -271,24 +348,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
-    elevation: 6, // Sombra para o Android
-  },
-
-   myPostIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 40,
-    backgroundColor: '#1A1A1E',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#29292E',
-    borderStyle: 'dashed', // Estilo pontilhado discreto
-  },
-  myPostIndicatorText: {
-    color: '#7C7C8A',
-    fontSize: 12,
-    fontWeight: '500',
-    marginLeft: 6,
+    elevation: 6,
   },
 });
