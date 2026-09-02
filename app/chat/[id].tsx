@@ -2,15 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import { api } from '../../src/services/api';
@@ -27,15 +27,14 @@ interface Message {
 }
 
 export default function PrivateChat() {
-  const { id: chatId } = useLocalSearchParams(); // Captura o ID vindo da URL automaticamente
-  const { user } = useAuth(); // Pega os dados do usuário logado para saber quem enviou o balão
+  const { id: chatId } = useLocalSearchParams();
+  const { user } = useAuth();
   const router = useRouter();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Carrega o histórico completo de mensagens desse chat específico
   async function loadMessages() {
     try {
       const response = await api.get(`/chats/${chatId}/messages`);
@@ -51,12 +50,11 @@ export default function PrivateChat() {
     loadMessages();
   }, [chatId]);
 
-  // Envia uma nova mensagem para a API do Back
   async function handleSendMessage() {
     if (!newMessage.trim()) return;
 
     const textToSend = newMessage;
-    setNewMessage(''); // Limpa o input imediatamente (Optimistic UX)
+    setNewMessage('');
 
     try {
       const response = await api.post('/chats/message', {
@@ -64,26 +62,32 @@ export default function PrivateChat() {
         content: textToSend
       });
 
-      // Adiciona a nova mensagem retornada no fim da nossa lista local
       setMessages((prev) => [...prev, response.data]);
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
     }
   }
 
-  // Define se o balão fica na direita (eu) ou na esquerda (o outro irmão)
   const renderMessageItem = ({ item }: { item: Message }) => {
     const isMine = item.senderId === user?.id;
 
+    let formattedTime = '';
+    try {
+      formattedTime = new Date(item.createdAt).toLocaleTimeString('pt-BR', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } catch (e) {
+      formattedTime = '--:--';
+    }
+
     return (
       <View style={[styles.messageWrapper, isMine ? styles.myMessageWrapper : styles.theirMessageWrapper]}>
-        {!isMine && <Text style={styles.senderName}>{item.sender.nickname}</Text>}
+        {!isMine && <Text style={styles.senderName}>{String(item.sender.nickname)}</Text>}
         <View style={[styles.messageBubble, isMine ? styles.myBubble : styles.theirBubble]}>
-          <Text style={styles.messageText}>{item.content}</Text>
+          <Text style={styles.messageText}>{String(item.content)}</Text>
         </View>
-        <Text style={styles.messageTime}>
-          {new Date(item.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-        </Text>
+        <Text style={styles.messageTime}>{formattedTime}</Text>
       </View>
     );
   };
@@ -102,13 +106,13 @@ export default function PrivateChat() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      {/* Header Customizado da Tela de Chat */}
+      {/* Header Customizado da Tela de Chat sem espaços fantasmas */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>🔒 Chat de Apoio</Text>
-        <View style={{ width: 24 }} /> {/* Espaçador para centralizar o título */}
+        <View style={styles.spacer} />
       </View>
 
       {/* Linha do Tempo das Mensagens */}
@@ -152,7 +156,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'between',
     backgroundColor: '#202024',
     height: 60,
     paddingHorizontal: 16,
@@ -169,6 +172,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     flex: 1,
+  },
+  spacer: {
+    width: 24,
   },
   messagesList: {
     padding: 16,
