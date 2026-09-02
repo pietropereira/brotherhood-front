@@ -1,57 +1,40 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { api } from '../../src/services/api';
+import { useAuth } from '../../src/context/AuthContext';
 
-export default function Register() {
+export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [nickname, setNickname] = useState('');
   const [loading, setLoading] = useState(false);
   
+  const { signIn } = useAuth();
   const router = useRouter();
 
-  // Gerador de avatar determinístico temporário baseado no nickname usando a API do DiceBear
-  const avatarUrl = nickname 
-    ? `https://dicebear.com{encodeURIComponent(nickname)}`
-    : null;
-
-  async function handleRegister() {
-    if (!email || !password || !nickname) {
-      Alert.alert('Atenção', 'Por favor, preencha todos os campos obrigatórios.');
+  async function handleLogin() {
+    if (!email || !password) {
+      Alert.alert('Atenção', 'Por favor, preencha o e-mail e a senha.');
       return;
     }
 
     setLoading(true);
 
     try {
-      // Dispara a requisição direto para a nossa API do Back (porta 3334 via Axios)
-      await api.post('/auth/register', {
-        email,
-        password,
-        nickname,
-        avatarUrl
-      });
-
-      Alert.alert(
-        'Irmandade Consolidada!', 
-        'Seu cadastro anônimo foi criado com sucesso. Agora faça seu login.',
-        [{ text: 'Ir para Login', onPress: () => router.push('/login') }]
-      );
+      // Chama o signIn do nosso Contexto (que já salva o Token e muda de tela)
+      await signIn({ email, password });
     } catch (error: any) {
-      const apiError = error.response?.data?.error || 'Não foi possível concluir o cadastro.';
-      Alert.alert('Erro no cadastro', apiError);
+      Alert.alert('Falha no acesso', error.message || 'Credenciais inválidas.');
     } finally {
       setLoading(false);
     }
@@ -69,26 +52,16 @@ export default function Register() {
           <Text style={styles.logo}>🚀 BROTHERHOOD</Text>
           <Text style={styles.tagline}>Autoajuda Masculina Anônima</Text>
           <Text style={styles.description}>
-            Seu e-mail e senha servem apenas para acesso seguro. Na comunidade, seu único rastro é a sua armadura (Nickname).
+            Entre com suas credenciais seguras para acessar seu refúgio anônimo.
           </Text>
         </View>
 
         {/* Formulário */}
         <View style={styles.form}>
-          <Text style={styles.label}>Como quer ser chamado? (Único e Anônimo) *</Text>
+          <Text style={styles.label}>Seu E-mail Privado</Text>
           <TextInput 
             style={styles.input}
-            placeholder="Ex: GuerreiroMenteSã, Fenix88"
-            placeholderTextColor="#666"
-            value={nickname}
-            onChangeText={setNickname}
-            autoCorrect={false}
-          />
-
-          <Text style={styles.label}>Seu E-mail Privado *</Text>
-          <TextInput 
-            style={styles.input}
-            placeholder="Ex: seuemail@provedor.com"
+            placeholder="seuemail@provedor.com"
             placeholderTextColor="#666"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -97,7 +70,7 @@ export default function Register() {
             onChangeText={setEmail}
           />
 
-          <Text style={styles.label}>Sua Senha de Acesso *</Text>
+          <Text style={styles.label}>Sua Senha</Text>
           <TextInput 
             style={styles.input}
             placeholder="••••••••"
@@ -109,22 +82,22 @@ export default function Register() {
             onChangeText={setPassword}
           />
 
-          {/* Botão de Envio */}
+          {/* Botão de Entrada */}
           <TouchableOpacity 
             style={styles.button} 
-            onPress={handleRegister}
+            onPress={handleLogin}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color="#FFF" />
             ) : (
-              <Text style={styles.buttonText}>Criar Conta Anônima</Text>
+              <Text style={styles.buttonText}>Acessar a Comunidade</Text>
             )}
           </TouchableOpacity>
 
-          {/* Link para o Login */}
-          <TouchableOpacity style={styles.linkButton} onPress={() => router.push('/login')}>
-            <Text style={styles.linkText}>Já faz parte da irmandade? Faça Login</Text>
+          {/* Link para o Cadastro */}
+          <TouchableOpacity style={styles.linkButton} onPress={() => router.push('/register')}>
+            <Text style={styles.linkText}>Novo por aqui? Crie sua conta anônima</Text>
           </TouchableOpacity>
         </View>
 
@@ -136,7 +109,7 @@ export default function Register() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121214', // Fundo Dark Premium
+    backgroundColor: '#121214',
   },
   scrollContainer: {
     flexGrow: 1,
@@ -146,7 +119,6 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 32,
-    marginTop: 40,
   },
   logo: {
     fontSize: 28,
@@ -156,7 +128,7 @@ const styles = StyleSheet.create({
   },
   tagline: {
     fontSize: 14,
-    color: '#00B37E', // Verde destaque para acolhimento/esperança
+    color: '#00B37E',
     fontWeight: '600',
     marginTop: 4,
     marginBottom: 16,
@@ -166,7 +138,6 @@ const styles = StyleSheet.create({
     color: '#8D8D99',
     textAlign: 'center',
     lineHeight: 20,
-    paddingHorizontal: 8,
   },
   form: {
     width: '100%',
@@ -195,11 +166,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 32,
-    shadowColor: '#00B37E',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
   },
   buttonText: {
     color: '#FFF',

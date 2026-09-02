@@ -1,59 +1,38 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import React from 'react';
+import { ActivityIndicator, View } from 'react-native';
+import { AuthProvider, useAuth } from '../src/context/AuthContext';
 
-import { useColorScheme } from '@/components/useColorScheme';
+// Criamos um componente interno para gerenciar a navegação baseada no estado de login
+function RootLayoutNav() {
+  const { loading } = useAuth();
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
-
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
-
-export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    ...FontAwesome.font,
-  });
-
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
+  // Se estiver carregando o token do SecureStore, mostra um loading na tela
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#121214', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#00B37E" />
+      </View>
+    );
   }
 
-  return <RootLayoutNav />;
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      {/* Grupo de rotas deslogadas */}
+      <Stack.Screen name="(auth)" />
+      {/* Grupo de rotas logadas com as abas inferiores */}
+      <Stack.Screen name="(tabs)" />
+      {/* Rota da tela de chat privada */}
+      <Stack.Screen name="chat/[id]" />
+    </Stack>
+  );
 }
 
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
+// O componente principal apenas envelopa tudo com o Provider global
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
   );
 }
