@@ -1,57 +1,66 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
 import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
-}
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
+export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
-      }}>
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: '#121214', // Fundo do header superior
+          borderBottomWidth: 1,
+          borderBottomColor: '#202024',
+        },
+        headerTitleStyle: {
+          color: '#FFF',
+          fontWeight: 'bold',
+          fontSize: 18,
+          letterSpacing: 0.5,
+        },
+        tabBarStyle: {
+          backgroundColor: '#121214', // Fundo da barra inferior
+          borderTopWidth: 1,
+          borderTopColor: '#202024',
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarActiveTintColor: '#00B37E',   // Cor do ícone ativo (Verde Brotherhood)
+        tabBarInactiveTintColor: '#7C7C8A', // Cor do ícone inativo (Cinza)
+      }}
+    >
+      {/* Aba 1: Feed de Tópicos Públicos */}
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
+          title: 'Feed',
+          headerTitle: '🚀 Brotherhood Feed',
+          tabBarLabel: 'Feed',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons 
+              name={focused ? 'newspaper' : 'newspaper-outline'} 
+              size={size} 
+              color={color} 
+            />
           ),
         }}
       />
+
+      {/* Aba 2: Caixa de Entrada de Chats Privados */}
       <Tabs.Screen
-        name="two"
+        name="chats"
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Conversas',
+          headerTitle: '💬 Canais Privados',
+          tabBarLabel: 'Conversas',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons 
+              name={focused ? 'chatbubbles' : 'chatbubbles-outline'} 
+              size={size} 
+              color={color} 
+            />
+          ),
         }}
       />
     </Tabs>
