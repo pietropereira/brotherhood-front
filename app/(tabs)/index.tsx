@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Image,
   Platform,
   RefreshControl,
   StyleSheet,
@@ -93,10 +92,28 @@ export default function Feed() {
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Image 
-            source={{ uri: item.author.avatarUrl || 'https://dicebear.com' }} 
-            style={styles.avatar} 
-          />
+
+          {/* 🛡️ RENDERIZADOR DE AVATAR COM LETRAS INICIAIS */}
+            <View style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: '#1A3F30', // Fundo verde escuro premium
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: '#00B37E'
+            }}>
+              <Text style={{
+                color: '#00B37E',
+                fontWeight: 'bold',
+                fontSize: 14,
+                textTransform: 'uppercase'
+              }}>
+                {/* Pega as duas primeiras letras do Nickname de forma segura */}
+                {item.author?.nickname ? item.author.nickname.substring(0, 2) : 'AN'}
+              </Text>
+            </View>
           <View style={styles.authorInfo}>
             <Text style={styles.nickname}>{item.author.nickname}</Text>
             <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString('pt-BR')}</Text>
