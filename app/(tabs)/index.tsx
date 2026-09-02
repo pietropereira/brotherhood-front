@@ -1,3 +1,4 @@
+import { useAuth } from '@/src/context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -31,6 +32,7 @@ export default function Feed() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
+  const { user } = useAuth();
 
   // Busca os tópicos salvos no backend (porta 3334)
   async function fetchTopics() {
@@ -75,35 +77,46 @@ async function handleOpenChat(topicId: string) {
 }
 
   // Renderiza cada card de desabafo individualmente
-  const renderItem = ({ item }: { item: Topic }) => (
-    <View style={styles.card}>
-      {/* Header do Card (Dados Anônimos do Autor) */}
-      <View style={styles.cardHeader}>
-        <Image 
-          source={{ uri: item.author.avatarUrl || 'https://dicebear.com' }} 
-          style={styles.avatar} 
-        />
-        <View style={styles.authorInfo}>
-          <Text style={styles.nickname}>{item.author.nickname}</Text>
-          <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString('pt-BR')}</Text>
+  const renderItem = ({ item }: { item: Topic }) => {
+    // 🕵️‍♂️ Checa se o post pertence ao irmão logado
+    const isMyOwnPost = item.authorId === user?.id;
+
+    return (
+      <View style={styles.card}>
+        {/* Header do Card (Dados Anônimos) */}
+        <View style={styles.cardHeader}>
+          <Image 
+            source={{ uri: item.author.avatarUrl || 'https://dicebear.com' }} 
+            style={styles.avatar} 
+          />
+          <View style={styles.authorInfo}>
+            <Text style={styles.nickname}>{item.author.nickname}</Text>
+            <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString('pt-BR')}</Text>
+          </View>
+          <View style={styles.categoryBadge}>
+            <Text style={styles.categoryText}>{item.category}</Text>
+          </View>
         </View>
-        {/* Badge da Categoria */}
-        <View style={styles.categoryBadge}>
-          <Text style={styles.categoryText}>{item.category}</Text>
-        </View>
+
+        {/* Conteúdo do Desabafo */}
+        <Text style={styles.cardTitle}>{item.title}</Text>
+        <Text style={styles.cardContent}>{item.content}</Text>
+
+        {/* 🛑 EXIBIÇÃO CONDICIONAL DO BOTÃO DE APOIO */}
+        {isMyOwnPost ? (
+          <View style={styles.myPostIndicator}>
+            <Ionicons name="person-outline" size={14} color="#7C7C8A" />
+            <Text style={styles.myPostIndicatorText}>Seu próprio desabafo</Text>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.chatButton} onPress={() => handleOpenChat(item.id)}>
+            <Ionicons name="chatbubble-ellipses-outline" size={18} color="#00B37E" />
+            <Text style={styles.chatButtonText}>Apoiar no Privado</Text>
+          </TouchableOpacity>
+        )}
       </View>
-
-      {/* Conteúdo do Desabafo */}
-      <Text style={styles.cardTitle}>{item.title}</Text>
-      <Text style={styles.cardContent}>{item.content}</Text>
-
-      {/* Botão de Ação: Apoiar no Privado */}
-      <TouchableOpacity style={styles.chatButton} onPress={() => handleOpenChat(item.id)}>
-        <Ionicons name="chatbubble-ellipses-outline" size={18} color="#00B37E" />
-        <Text style={styles.chatButtonText}>Apoiar no Privado</Text>
-      </TouchableOpacity>
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -131,6 +144,15 @@ async function handleOpenChat(topicId: string) {
           </View>
         }
       />
+
+      {/* 🚀 BOTÃO FLUTUANTE DE NOVO DESABAFO */}
+      <TouchableOpacity 
+        style={styles.fab} 
+        onPress={() => router.push('/new-topic')}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={28} color="#FFF" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -233,5 +255,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 12,
     textAlign: 'center',
+  },
+
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    backgroundColor: '#00B37E', // Verde Brotherhood
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#00B37E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 6, // Sombra para o Android
+  },
+
+   myPostIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 40,
+    backgroundColor: '#1A1A1E',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#29292E',
+    borderStyle: 'dashed', // Estilo pontilhado discreto
+  },
+  myPostIndicatorText: {
+    color: '#7C7C8A',
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 6,
   },
 });
