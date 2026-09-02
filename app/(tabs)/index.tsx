@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   RefreshControl,
@@ -28,6 +30,7 @@ export default function Feed() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
 
   // Busca os tópicos salvos no backend (porta 3334)
   async function fetchTopics() {
@@ -53,10 +56,23 @@ export default function Feed() {
   }
 
   // Lógica para abrir o chat privado ao clicar em um desabafo
-  async function handleOpenChat(topicId: string) {
-    // Implementaremos a navegação para o chat no próximo passo!
-    console.log('Abrir conversa privada para o tópico:', topicId);
+async function handleOpenChat(topicId: string) {
+  try {
+    // Dispara o POST para o nosso back criando ou recuperando o chat privado
+    const response = await api.post('/chats', { topicId });
+    
+    // Pegamos o ID da conversa que o backend retornou
+    const { id: chatId } = response.data;
+
+    // Navega nativamente para a tela de chat dinâmico passando o ID na URL
+    router.push(`/chat/${chatId}`);
+  } catch (error: any) {
+    const apiError = error.response?.data?.error || 'Não foi possível iniciar a conversa.';
+    
+    // Trata o caso do cara tentar apoiar o próprio desabafo (regra que criamos no back!)
+    Alert.alert('Aviso', apiError);
   }
+}
 
   // Renderiza cada card de desabafo individualmente
   const renderItem = ({ item }: { item: Topic }) => (
