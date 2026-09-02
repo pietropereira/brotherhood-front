@@ -1,13 +1,14 @@
+import { api } from '@/src/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
-    Alert,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { useAuth } from '../../src/context/AuthContext';
 
@@ -25,6 +26,44 @@ export default function Profile() {
         [
           { text: 'Cancelar', style: 'cancel' },
           { text: 'Sair de Vez', style: 'destructive', onPress: signOut }
+        ]
+      );
+    }
+  }
+
+  async function handleDeleteAccount() {
+    const proceedDeletion = async () => {
+      try {
+        // Dispara o DELETE para o nosso backend
+        await api.delete('/auth/me');
+        
+        // Se der certo, limpa o token local do celular e chuta para a tela de login
+        await signOut();
+        
+        if (Platform.OS === 'web') {
+          alert('Sua conta e todos os seus rastros foram apagados permanentemente.');
+        } else {
+          Alert.alert('Conta Excluída', 'Sua conta e todos os seus rastros foram apagados permanentemente.');
+        }
+      } catch (error) {
+        if (Platform.OS === 'web') {
+          alert('Não foi possível excluir sua conta agora.');
+        } else {
+          Alert.alert('Erro', 'Não foi possível excluir sua conta agora.');
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmDelete = confirm('⚠️ ATENÇÃO: Esta ação é irreversível. Todos os seus desabafos e chats serão apagados para sempre. Deseja continuar?');
+      if (confirmDelete) proceedDeletion();
+    } else {
+      Alert.alert(
+        '🚨 AÇÃO IRREVERSÍVEL',
+        'Todos os seus desabafos, mensagens e canais privados serão apagados permanentemente do banco de dados. Deseja continuar?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Apagar Tudo Permanentemente', style: 'destructive', onPress: proceedDeletion }
         ]
       );
     }
@@ -94,6 +133,11 @@ export default function Profile() {
       <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut} activeOpacity={0.8}>
         <Ionicons name="log-out-outline" size={20} color="#F75A68" />
         <Text style={styles.logoutButtonText}>Sair do Aplicativo</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount} activeOpacity={0.8}>
+        <Ionicons name="trash-bin-outline" size={20} color="#7C7C8A" />
+        <Text style={styles.deleteButtonText}>Excluir Minha Conta Definitivamente</Text>
       </TouchableOpacity>
 
       <Text style={styles.versionText}>Brotherhood v1.0.0 • Protegido</Text>
@@ -221,5 +265,21 @@ const styles = StyleSheet.create({
     color: '#323238',
     fontSize: 12,
     marginTop: 24,
+  },
+    deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: 48,
+    borderRadius: 8,
+    marginTop: 16, // Dá um espaço do botão de logout
+  },
+  deleteButtonText: {
+    color: '#7C7C8A', // Cinza discreto para não ficar chamativo demais no layout
+    fontSize: 14,
+    fontWeight: '500',
+    textDecorationLine: 'underline',
+    marginLeft: 8,
   },
 });
