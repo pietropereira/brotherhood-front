@@ -40,6 +40,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="chat/[id]" />
       <Stack.Screen name="new-topic" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="admin-panel" />
     </Stack>
   );
 }

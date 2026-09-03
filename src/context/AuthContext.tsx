@@ -30,6 +30,7 @@ interface User {
   id: string;
   nickname: string;
   avatarUrl: string | null;
+  isAdmin: boolean;
 }
 
 interface AuthContextData {
