@@ -1,8 +1,8 @@
+import { useAlert } from '@/src/context/AlertContext';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -21,20 +21,30 @@ export default function Login() {
   
   const { signIn } = useAuth();
   const router = useRouter();
+  const { showAlert } = useAlert();
 
   async function handleLogin() {
     if (!email || !password) {
-      Alert.alert('Atenção', 'Por favor, preencha o e-mail e a senha.');
+       showAlert({
+          title: 'Atenção',
+          description: 'Por favor, preencha o e-mail e a senha.',
+          confirmText: 'OK',
+          cancelText: '',
+        });
       return;
     }
 
     setLoading(true);
 
     try {
-      // Chama o signIn do nosso Contexto (que já salva o Token e muda de tela)
       await signIn({ email, password });
-    } catch (error: any) {
-      Alert.alert('Falha no acesso', error.message || 'Credenciais inválidas.');
+    } catch (error: any) { 
+        showAlert({
+          title: 'Atenção',
+          description: 'Credenciais inválidas.',
+          confirmText: 'OK',
+          cancelText: '',
+        });
     } finally {
       setLoading(false);
     }

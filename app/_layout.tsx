@@ -1,3 +1,4 @@
+import { AlertProvider } from '@/src/context/AlertContext';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -25,8 +26,8 @@ function RootLayoutNav() {
   }, [user, loading, segments]);
 
   if (loading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#121214', justifyContent: 'center', alignItems: 'center' }}>
+     return (
+     <View style={{ flex: 1, backgroundColor: '#121214', justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#00B37E" />
       </View>
     );
@@ -46,7 +47,9 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootLayoutNav />
+       <AlertProvider>
+        <RootLayoutNav />
+      </AlertProvider>
     </AuthProvider>
   );
 }
