@@ -1,5 +1,6 @@
 import { api } from '@/src/services/api';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React from 'react';
 import {
   ScrollView,
@@ -118,6 +119,18 @@ async function handleDeleteAccount() {
           </View>
         </View>
       </View>
+
+      {/* 👑 BOTÃO SECRETO DO PAINEL ADMIN (Exibido apenas para moderadores) */}
+      {user?.isAdmin && (
+        <TouchableOpacity 
+          style={styles.adminButton} 
+          onPress={() => router.push('/admin-panel')}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="shield-half-outline" size={20} color="#00B37E" />
+          <Text style={styles.adminButtonText}>Painel de Moderação</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Botão de Ação: Deslogar / Sair */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut} activeOpacity={0.8}>
@@ -272,4 +285,24 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
     marginLeft: 8,
   },
+
+  adminButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1A2F26', // Fundo verde escuro premium de autoridade
+    width: '100%',
+    height: 56,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#00B37E',
+    marginBottom: 16,
+  },
+  adminButtonText: {
+    color: '#00B37E',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 10,
+  },
+
 });
