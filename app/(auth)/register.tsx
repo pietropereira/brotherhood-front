@@ -1,8 +1,8 @@
+import { useAlert } from '@/src/context/AlertContext';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -21,6 +21,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   
   const router = useRouter();
+  const { showAlert } = useAlert();
 
   // Gerador de avatar determinístico temporário baseado no nickname usando a API do DiceBear
   const avatarUrl = nickname 
@@ -30,11 +31,12 @@ export default function Register() {
 
   async function handleRegister() {
   if (!email || !password || !nickname) {
-    if (Platform.OS === 'web') {
-      alert('Por favor, preencha todos os campos obrigatórios.');
-    } else {
-      Alert.alert('Atenção', 'Por favor, preencha todos os campos obrigatórios.');
-    }
+     showAlert({
+          title: 'Atenção',
+          description: 'Por favor, preencha todos os campos obrigatórios.',
+          confirmText: 'OK',
+          cancelText: '',
+        });
     return;
   }
 
@@ -56,23 +58,20 @@ export default function Register() {
       router.push('/login');
     };
 
-    if (Platform.OS === 'web') {
-      alert('Seu cadastro anônimo foi criado com sucesso. Agora faça seu login.');
-      successAction();
-    } else {
-      Alert.alert(
-        'Irmandade Consolidada!', 
-        'Seu cadastro anônimo foi criado com sucesso. Agora faça seu login.',
-        [{ text: 'Ir para Login', onPress: successAction }]
-      );
-    }
-  } catch (error: any) {
-    const apiError = error.response?.data?.error || 'Não foi possível concluir o cadastro.';
-    if (Platform.OS === 'web') {
-      alert(apiError);
-    } else {
-      Alert.alert('Erro no cadastro', apiError);
-    }
+    showAlert({
+      title: 'Irmandade Consolidada!',
+      description: 'Seu cadastro anônimo foi criado com sucesso. Agora faça seu login.',
+      confirmText: 'OK',
+      cancelText: '',
+    });
+     successAction();
+  } catch (error: any) {    
+    showAlert({
+      title: 'Erro no cadastro',
+      description: 'Não foi possível concluir o cadastro.',
+      confirmText: 'OK',
+      cancelText: '',
+    });
   } finally {
     setLoading(false);
   }

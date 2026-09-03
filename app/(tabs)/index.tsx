@@ -1,11 +1,10 @@
+import { useAlert } from '@/src/context/AlertContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
-  Platform,
   RefreshControl,
   StyleSheet,
   Text,
@@ -39,6 +38,7 @@ export default function Feed() {
 
   const router = useRouter();
   const { user } = useAuth();
+  const { showAlert } = useAlert();
 
   // Busca os tópicos aplicando o filtro de categoria se não for 'Tudo'
   async function fetchTopics(categoryName = 'Tudo') {
@@ -77,12 +77,12 @@ export default function Feed() {
       const { id: chatId } = response.data;
       router.push(`/chat/${chatId}`);
     } catch (error: any) {
-      const apiError = error.response?.data?.error || 'Não foi possível iniciar a conversa.';
-      if (Platform.OS === 'web') {
-        alert(apiError);
-      } else {
-        Alert.alert('Aviso', apiError);
-      }
+       showAlert({
+          title: 'Atenção',
+          description: 'Não foi possível iniciar a conversa.',
+          confirmText: 'OK',
+          cancelText: '',
+        });
     }
   }
 

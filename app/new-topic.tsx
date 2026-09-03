@@ -1,17 +1,17 @@
+import { useAlert } from '@/src/context/AlertContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { api } from '../src/services/api';
 
@@ -25,14 +25,16 @@ export default function NewTopic() {
   const [loading, setLoading] = useState(false);
   
   const router = useRouter();
+  const { showAlert } = useAlert();
 
   async function handleCreateTopic() {
     if (!title.trim() || !content.trim() || !category) {
-      if (Platform.OS === 'web') {
-        alert('Por favor, preencha todos os campos e selecione uma categoria.');
-      } else {
-        Alert.alert('Atenção', 'Por favor, preencha todos os campos e selecione uma categoria.');
-      }
+        showAlert({
+          title: 'Atenção',
+          description: 'Por favor, preencha todos os campos e selecione uma categoria.',
+          confirmText: 'OK',
+          cancelText: '',
+        });
       return;
     }
 
@@ -46,23 +48,21 @@ export default function NewTopic() {
         category
       });
 
-      if (Platform.OS === 'web') {
-        alert('Seu desabafo foi compartilhado anonimamente com a irmandade.');
+      showAlert({
+          title:'Compartilhado!',
+          description: 'Seu desabafo foi compartilhado anonimamente com a irmandade.',
+          confirmText: 'OK',
+          cancelText: '',
+      });
         router.push('/(tabs)');
-      } else {
-        Alert.alert(
-          'Compartilhado!', 
-          'Seu desabafo foi compartilhado anonimamente com a irmandade.',
-          [{ text: 'Voltar ao Feed', onPress: () => router.push('/(tabs)') }]
-        );
-      }
     } catch (error: any) {
-      const apiError = error.response?.data?.error || 'Não foi possível postar o desabafo.';
-      if (Platform.OS === 'web') {
-        alert(apiError);
-      } else {
-        Alert.alert('Erro ao postar', apiError);
-      }
+      showAlert({
+          title:'Erro ao postar',
+          description: 'Não foi possível postar o desabafo.',
+          confirmText: 'OK',
+          cancelText: '',
+      });
+      
     } finally {
       setLoading(false);
     }

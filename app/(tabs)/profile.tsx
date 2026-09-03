@@ -2,72 +2,62 @@ import { api } from '@/src/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
-  Alert,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
+import { useAlert } from '../../src/context/AlertContext';
 import { useAuth } from '../../src/context/AuthContext';
+
+//const [logoutAlertVisible, setLogoutAlertVisible] = useState(false);
+
 
 export default function Profile() {
   const { user, signOut } = useAuth(); // Puxa os dados do usuário e a função de logout do contexto
-
+  const { showAlert } = useAlert();
   function handleSignOut() {
-    if (Platform.OS === 'web') {
-      const confirmLog = confirm('Tem certeza que deseja sair do seu refúgio anônimo?');
-      if (confirmLog) signOut();
-    } else {
-      Alert.alert(
-        'Sair da Irmandade',
-        'Tem certeza que deseja sair do seu refúgio anônimo?',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Sair de Vez', style: 'destructive', onPress: signOut }
-        ]
-      );
-    }
+    showAlert({
+      title: 'Sair da Irmandade',
+      description: 'Tem certeza que deseja sair do seu refúgio anônimo provisoriamente?',
+      confirmText: 'Sair de Vez',
+      cancelText: 'Permanecer',
+      onConfirm: signOut
+    });
   }
 
-  async function handleDeleteAccount() {
-    const proceedDeletion = async () => {
-      try {
-        // Dispara o DELETE para o nosso backend
-        await api.delete('/auth/me');
-        
-        // Se der certo, limpa o token local do celular e chuta para a tela de login
-        await signOut();
-        
-        if (Platform.OS === 'web') {
-          alert('Sua conta e todos os seus rastros foram apagados permanentemente.');
-        } else {
-          Alert.alert('Conta Excluída', 'Sua conta e todos os seus rastros foram apagados permanentemente.');
-        }
-      } catch (error) {
-        if (Platform.OS === 'web') {
-          alert('Não foi possível excluir sua conta agora.');
-        } else {
-          Alert.alert('Erro', 'Não foi possível excluir sua conta agora.');
-        }
-      }
-    };
+async function handleDeleteAccount() {
+  // 1. Função interna isolada que faz a chamada de destruição na API
+  const proceedDeletion = async () => {
+    try {
+      await api.delete('/auth/me');
+      await signOut(); // Limpa os dados locais e chuta para o login
 
-    if (Platform.OS === 'web') {
-      const confirmDelete = confirm('⚠️ ATENÇÃO: Esta ação é irreversível. Todos os seus desabafos e chats serão apagados para sempre. Deseja continuar?');
-      if (confirmDelete) proceedDeletion();
-    } else {
-      Alert.alert(
-        '🚨 AÇÃO IRREVERSÍVEL',
-        'Todos os seus desabafos, mensagens e canais privados serão apagados permanentemente do banco de dados. Deseja continuar?',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Apagar Tudo Permanentemente', style: 'destructive', onPress: proceedDeletion }
-        ]
-      );
+      // Alerta de Sucesso Premium
+      showAlert({
+        title: 'Conta Excluída',
+        description: 'Sua conta e todos os seus rastros foram apagados permanentemente da irmandade.',
+      });
+    } catch (error) {
+      // Alerta de Erro Premium
+      showAlert({
+        title: 'Erro na Exclusão',
+        description: 'Não foi possível excluir sua conta neste momento. Tente novamente mais tarde.',
+      });
     }
-  }
+  };
+
+  showAlert({
+    title: '🚨 AÇÃO IRREVERSÍVEL',
+    description: 'Todos os seus desabafos, mensagens e canais privados serão apagados permanentemente do banco de dados. Deseja continuar?',
+    confirmText: 'Apagar',
+    cancelText: 'Cancelar',
+    isDestructive: true, // Deixa o botão de confirmação vermelho no nosso CustomAlert
+    onConfirm: proceedDeletion, // Se o irmão confirmar, executa a deleção
+  });
+}
+
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -141,7 +131,7 @@ export default function Profile() {
       </TouchableOpacity>
 
       <Text style={styles.versionText}>Brotherhood v1.0.0 • Protegido</Text>
-
+    
     </ScrollView>
   );
 }
