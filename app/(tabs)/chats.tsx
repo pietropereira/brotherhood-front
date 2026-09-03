@@ -2,13 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import { api } from '../../src/services/api';
@@ -191,22 +191,39 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
+    paddingBottom: 40,
   },
+  
+  // 💬 CARDS PREMIUM DE CONVERSA REFINADOS
   chatCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#202024',
-    borderRadius: 8,
-    padding: 14,
+    borderRadius: 12, // Cantos alinhados com o Feed
+    padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#323238',
+    borderColor: '#29292E',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   avatar: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#323238',
+    backgroundColor: '#1A3F30', // Fundo assinatura Brotherhood
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#00B37E',
+  },
+  avatarText: {
+    color: '#00B37E',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   chatInfo: {
     flex: 1,
@@ -216,49 +233,55 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 4,
   },
   partnerName: {
     color: '#FFF',
     fontSize: 15,
     fontWeight: 'bold',
+    letterSpacing: 0.1,
     flex: 1,
     marginRight: 8,
   },
   timeText: {
     color: '#7C7C8A',
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: '500',
   },
   topicContext: {
     color: '#00B37E',
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 2,
+    fontSize: 12,
+    fontWeight: '700',
     marginBottom: 4,
   },
   lastMessageText: {
     color: '#8D8D99',
     fontSize: 13,
+    lineHeight: 18,
   },
   chevron: {
     marginLeft: 8,
   },
+  
+  // Estado Vazio
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 100,
-    paddingHorizontal: 24,
+    marginTop: 120,
+    paddingHorizontal: 32,
   },
   emptyTitle: {
     color: '#E1E1E6',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     marginTop: 16,
   },
   emptyText: {
     color: '#7C7C8A',
-    fontSize: 13,
+    fontSize: 14,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 20,
     marginTop: 8,
   },
 });
+

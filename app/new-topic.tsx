@@ -185,55 +185,58 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 24,
     backgroundColor: '#1A1A1E',
-    padding: 12,
-    borderRadius: 6,
+    padding: 16,
+    borderRadius: 12, // Alinhado com os cards do feed
     borderWidth: 1,
     borderColor: '#29292E',
   },
   label: {
     color: '#E1E1E6',
     fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-    marginTop: 16,
+    fontWeight: '700', // Texto ligeiramente mais forte
+    marginBottom: 10,
+    marginTop: 18,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   input: {
     backgroundColor: '#202024',
     color: '#FFF',
     height: 56,
-    borderRadius: 8,
+    borderRadius: 12, // Cantos modernos e idênticos aos cards
     paddingHorizontal: 16,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#323238',
+    borderColor: '#29292E',
   },
   textArea: {
-    height: 150,
+    height: 160,
     paddingTop: 16,
     paddingBottom: 16,
+    lineHeight: 22, // Melhor legibilidade ao digitar o desabafo
   },
   categoryContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
     marginBottom: 8,
   },
   categoryButton: {
     backgroundColor: '#202024',
     borderWidth: 1,
     borderColor: '#323238',
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: 24, // Pílulas bem arredondadas de alto padrão
   },
   categoryButtonSelected: {
     borderColor: '#00B37E',
-    backgroundColor: '#1A2F26',
+    backgroundColor: '#1A2F26', // Destaque suave em verde premium
   },
   categoryButtonText: {
     color: '#7C7C8A',
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   categoryButtonTextSelected: {
     color: '#00B37E',
@@ -241,14 +244,21 @@ const styles = StyleSheet.create({
   submitButton: {
     backgroundColor: '#00B37E',
     height: 56,
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 32,
+    marginTop: 40,
+    shadowColor: '#00B37E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 4,
   },
   submitButtonText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
 });
+
