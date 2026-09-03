@@ -33,7 +33,7 @@ export default function Register() {
   function handleOpenTerms() {
     showAlert({
       title: 'Diretrizes da Irmandade (EULA)',
-      description: '1. Respeito Mútuo: O Brotherhood é um ambiente seguro de acolhimento. É terminantemente proibido qualquer discurso de ódio, assédio, racismo ou preconceito.\n\n2. Anonimato: Respeite a privacidade alheia. É proibido tentar descobrir ou vazar a identidade real de qualquer irmão.\n\n3. Moderação Activa: Conteúdos denunciados serão revisados em até 24h. Violações graves resultarão no banimento imediato e permanente da conta.',
+      description: '1. Respeito Mútuo: O Brotherhood é um ambiente seguro de acolhimento. É terminantemente proibido qualquer discurso de ódio, assédio, racismo ou preconceito.\n\n2. Anonimato: Respeite a privacidade alheia. É proibido tentar descobrir ou vazar a identidade real de qualquer irmão.\n\n3. Moderação Ativa: Conteúdos denunciados serão revisados em até 24h. Violações graves resultarão no banimento imediato e permanente da conta.\n\n4. PROIBIDO PEDIR DINHEIRO OU DOAÇÕES: O Brotherhood visa estritamente o suporte emocional. É expressamente proibido divulgar chaves Pix, links de vaquinhas ou pedir ajuda financeira. Posts com este intuito serão deletados e a conta banida na hora.',
       confirmText: 'Entendi e Concordo',
     });
   }

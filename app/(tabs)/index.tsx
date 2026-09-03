@@ -28,7 +28,14 @@ interface Topic {
   };
 }
 
-const CATEGORIES = ['Tudo', 'Depressão', 'Serviço', 'Ansiedade', 'Outros'];
+const CATEGORIES = [
+  'Tudo', 
+  'Ansiedade / Mente', 
+  'Trabalho / Carreira', 
+  'Relacionamentos', 
+  'Vícios / Hábitos', 
+  'Outros'
+];
 
 // 🚨 CONECTA AO SOCKET DO BACKEND (Garanta o IP correto da sua máquina)
 //const socket = io('http://192.168.1.6:3334'); 
