@@ -16,7 +16,14 @@ import {
 import { api } from '../src/services/api';
 
 // Categorias alinhadas com o debate estratégico
-const CATEGORIES = ['Depressão', 'Serviço', 'Ansiedade', 'Outros'];
+const CATEGORIES = [
+  'Tudo', 
+  'Ansiedade / Mente', 
+  'Trabalho / Carreira', 
+  'Relacionamentos', 
+  'Vícios / Hábitos', 
+  'Outros'
+];
 
 export default function NewTopic() {
   const [title, setTitle] = useState('');
