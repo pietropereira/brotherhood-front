@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { io } from 'socket.io-client';
 import { useAlert } from '../../src/context/AlertContext';
 import { useAuth } from '../../src/context/AuthContext';
 import { api } from '../../src/services/api';
@@ -29,26 +30,28 @@ interface Topic {
 
 const CATEGORIES = ['Tudo', 'Depressão', 'Serviço', 'Ansiedade', 'Outros'];
 
+// 🚨 CONECTA AO SOCKET DO BACKEND (Garanta o IP correto da sua máquina)
+//const socket = io('http://192.168.1.6:3334'); 
+
 export default function Feed() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('Tudo');
   
-  // ⚡ ESTADOS DA PAGINAÇÃO
+  // ⚡ INSTÂNCIAS DE TEMPO REAL & PAGINAÇÃO
+  const [newTopicsCache, setNewTopicsCache] = useState<Topic[]>([]); // Cache invisível do Socket
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true); // Controla se ainda há posts no banco
+  const [hasMore, setHasMore] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const router = useRouter();
   const { user } = useAuth();
   const { showAlert } = useAlert();
 
-  // Função principal de busca adaptada para carregar novos blocos
   async function fetchTopics(categoryName = 'Tudo', pageNumber = 1, shouldAppend = false) {
     try {
       const baseUrl = categoryName === 'Tudo' ? '/topics' : `/topics?category=${encodeURIComponent(categoryName)}`;
-      // Conecta o Query Param de página na URL
       const separator = baseUrl.includes('?') ? '&' : '?';
       const url = `${baseUrl}${separator}page=${pageNumber}`;
 
@@ -56,14 +59,11 @@ export default function Feed() {
       const data = response.data;
 
       if (shouldAppend) {
-        // Se for scroll infinito, junta as mensagens novas no fim do array atual
         setTopics((prev) => [...prev, ...data]);
       } else {
-        // Se for a primeira carga ou refresh, substitui tudo
         setTopics(data);
       }
 
-      // Se a API devolveu menos de 10 posts, significa que a fonte secou e não há mais registros no banco
       if (data.length < 10) {
         setHasMore(false);
       } else {
@@ -78,30 +78,70 @@ export default function Feed() {
     }
   }
 
-  // Monitora a troca de categoria limpando a paginação e voltando para a página 1
+   useEffect(() => {
+    if (!user?.id) return;
+
+    // Cria a instância do socket exclusivamente para esta sessão ativa da tela
+    const socketClient = io('http://192.168.1.6:3334', {
+      transports: ['websocket'], // Força o protocolo WebSocket direto para evitar gargalos de polling
+      upgrade: false
+    });
+
+    socketClient.on('connect', () => {
+      console.log('🟩 Celular conectado com sucesso ao fluxo de tempo real do Feed!');
+    });
+
+    // Escuta novos desabafos criados globalmente no backend
+    socketClient.on('new_topic_published', (newTopic: Topic) => {
+      console.log('📩 Novo tópico detectado via WebSocket:', newTopic.title);
+      
+      // Regra 1: Se fui EU que criei, ignora
+      if (newTopic.authorId === user.id) return;
+
+      // Regra 2: Verifica se bate com a categoria selecionada na tela atual
+      const matchesCategory = selectedCategory === 'Tudo' || newTopic.category === selectedCategory;
+
+      if (matchesCategory) {
+        setNewTopicsCache((prev) => {
+          if (prev.some((t) => t.id === newTopic.id)) return prev;
+          return [newTopic, ...prev];
+        });
+      }
+    });
+
+    // Limpa a conexão física ao sair do feed ou deslogar (evita conexões órfãs no Docker)
+    return () => {
+      socketClient.disconnect();
+    };
+  }, [selectedCategory, user?.id]); 
+ 
+
   useEffect(() => {
     setPage(1);
+    setNewTopicsCache([]);
     setLoading(true);
     fetchTopics(selectedCategory, 1, false);
   }, [selectedCategory]);
 
-  // Pull to Refresh (Reseta o feed do topo)
   function handleRefresh() {
     setRefreshing(true);
     setPage(1);
+    setNewTopicsCache([]);
     fetchTopics(selectedCategory, 1, false);
   }
 
-  // ⚡ GATILHO DO INFINITE SCROLL: Chamado quando o usuário chega no fim da lista
   function handleLoadMore() {
-    if (loadingMore || !hasMore) return; // Se já está buscando ou se não há mais dados, trava o disparo
-
+    if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     const nextPage = page + 1;
     setPage(nextPage);
-    
-    // Passa 'true' no append para anexar os dados novos
     fetchTopics(selectedCategory, nextPage, true);
+  }
+
+  // 🔥 LIBERA O CACHE: Despeja os novos posts na lista ao clicar na pílula flutuante
+  function handleApplyNewTopics() {
+    setTopics((prev) => [...newTopicsCache, ...prev]);
+    setNewTopicsCache([]);
   }
 
   function handleSelectCategory(categoryName: string) {
@@ -132,7 +172,6 @@ export default function Feed() {
           description: 'Obrigado por nos ajudar a manter a irmandade segura. Nossa moderação analisará este desabafo em breve.'
         });
         
-        // Recarrega o feed imediatamente para sumir com o post denunciado da tela
         handleRefresh();
       } catch (error: any) {
         const apiError = error.response?.data?.error || 'Não foi possível processar a denúncia.';
@@ -195,7 +234,6 @@ export default function Feed() {
     );
   };
 
-  // 🔁 Renderiza um spinner discreto no rodapé da lista enquanto carrega mais posts
   const renderFooter = () => {
     if (!loadingMore) return null;
     return (
@@ -230,6 +268,20 @@ export default function Feed() {
         />
       </View>
 
+      {/* 💊 PÍLULA FLUTUANTE DE TEMPO REAL DA INDÚSTRIA */}
+      {newTopicsCache.length > 0 && (
+        <TouchableOpacity 
+          style={styles.floatingPill} 
+          onPress={handleApplyNewTopics}
+          activeOpacity={0.9}
+        >
+          <Ionicons name="arrow-up" size={14} color="#FFF" />
+          <Text style={styles.floatingPillText}>
+            {newTopicsCache.length} {newTopicsCache.length === 1 ? 'novo desabafo' : 'novos desabafos'}
+          </Text>
+        </TouchableOpacity>
+      )}
+
       {loading && page === 1 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#00B37E" />
@@ -244,9 +296,8 @@ export default function Feed() {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#00B37E" />
           }
-          // Propriedades do Infinite Scroll:
           onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.1} // Ativa o disparo quando o usuário rolar 90% da tela
+          onEndReachedThreshold={0.1}
           ListFooterComponent={renderFooter}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
@@ -273,6 +324,32 @@ const styles = StyleSheet.create({
   categoryFilterButtonSelected: { backgroundColor: '#00B37E', borderColor: '#00B37E' },
   categoryFilterText: { color: '#7C7C8A', fontSize: 13, fontWeight: '600' },
   categoryFilterTextSelected: { color: '#FFF' },
+  
+  // 💊 Estilos da Pílula Flutuante Sênior
+  floatingPill: {
+    position: 'absolute',
+    top: 68, 
+    alignSelf: 'center',
+    backgroundColor: '#00B37E',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 999,
+    shadowColor: '#00B37E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  floatingPillText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginLeft: 6,
+  },
+
   listContainer: { padding: 16, paddingBottom: 80 },
   card: { backgroundColor: '#202024', borderRadius: 8, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#323238' },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
