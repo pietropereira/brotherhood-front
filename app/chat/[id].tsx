@@ -2,18 +2,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-// import {
-//   ActivityIndicator,
-//   FlatList,
-//   KeyboardAvoidingView,
-//   Platform,
-//   StyleSheet,
-//   Text,
-//   TextInput,
-//   TouchableOpacity,
-//   View
-// } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { io } from 'socket.io-client';
 import { useAuth } from '../../src/context/AuthContext';
 import { api } from '../../src/services/api';
@@ -29,6 +28,11 @@ interface Message {
   };
 }
 
+interface ChatDetails {
+  topic: { title: string; author: { nickname: string } };
+  participant: { nickname: string };
+}
+
 const socket = io('http://192.168.1.6:3334'); 
 
 export default function PrivateChat() {
@@ -37,37 +41,41 @@ export default function PrivateChat() {
   const router = useRouter();
 
   const [messages, setMessages] = useState<Message[]>([]);
+  const [chatInfo, setChatInfo] = useState<ChatDetails | null>(null); // Dados do header
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // 1. Carrega o histórico inicial do banco
-  async function loadMessages() {
+  // Carrega o histórico e descobre as informações do Chat (para o Header dinâmico)
+  async function loadChatData() {
     try {
-      const response = await api.get(`/chats/${chatId}/messages`);
-      setMessages(response.data);
+      // 1. Busca as mensagens
+      const messagesResponse = await api.get(`/chats/${chatId}/messages`);
+      setMessages(messagesResponse.data);
+
+      // 2. Busca os dados de contexto do chat (Bate no GET /chats/me e filtra o atual)
+      const inboxResponse = await api.get('/chats/me');
+      const currentChat = inboxResponse.data.find((c: any) => c.id === chatId);
+      if (currentChat) {
+        setChatInfo(currentChat);
+      }
     } catch (error) {
-      console.error('Erro ao carregar mensagens:', error);
+      console.error('Erro ao carregar dados do chat:', error);
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadMessages();
-
-    // 2. Conecta na sala exclusiva desse chat no backend
+    loadChatData();
     socket.emit('join_chat', chatId);
 
-    // 3. Escuta quando uma nova mensagem chegar (seja minha ou do outro irmão)
     socket.on('new_message', (message: Message) => {
-      // Evita duplicar na tela se fui eu mesmo quem enviei (já que o handleSendMessage já adiciona local)
       setMessages((prev) => {
         if (prev.some((m) => m.id === message.id)) return prev;
         return [...prev, message];
       });
     });
 
-    // Limpa os ouvintes ao sair da tela para não acumular memória
     return () => {
       socket.off('new_message');
     };
@@ -80,7 +88,6 @@ export default function PrivateChat() {
     setNewMessage('');
 
     try {
-      // O POST dispara, o back salva no banco e o back se encarrega de emitir via socket para todos na sala
       await api.post('/chats/message', {
         chatId,
         content: textToSend
@@ -90,30 +97,33 @@ export default function PrivateChat() {
     }
   }
 
+  // 🕵️‍♂️ Descobre o nome do irmão parceiro de conversa para exibir no topo
+  const isIAmTopicAuthor = chatInfo?.topic.author.nickname === user?.nickname;
+  const partnerNickname = isIAmTopicAuthor 
+    ? chatInfo?.participant.nickname 
+    : chatInfo?.topic.author.nickname;
+
   const renderMessageItem = ({ item }: { item: Message }) => {
-  const isMine = item.senderId === user?.id;
+    const isMine = item.senderId === user?.id;
 
-  let formattedTime = '';
-  try {
-    formattedTime = new Date(item.createdAt).toLocaleTimeString('pt-BR', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  } catch (e) {
-    formattedTime = '--:--';
-  }
+    let formattedTime = '';
+    try {
+      formattedTime = new Date(item.createdAt).toLocaleTimeString('pt-BR', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } catch (e) {
+      formattedTime = '--:--';
+    }
 
-  return (
-    <View style={[styles.messageWrapper, isMine ? styles.myMessageWrapper : styles.theirMessageWrapper]}>
-      {/* 🔐 Blindagem com item.sender?.nickname para evitar quebras se o socket atrasar */}
-      {!isMine && <Text style={styles.senderName}>{String(item.sender?.nickname || 'Irmão Anônimo')}</Text>}
-      
-      <View style={[styles.messageBubble, isMine ? styles.myBubble : styles.theirBubble]}>
-        <Text style={styles.messageText}>{String(item.content)}</Text>
+    return (
+      <View style={[styles.messageWrapper, isMine ? styles.myMessageWrapper : styles.theirMessageWrapper]}>
+        <View style={[styles.messageBubble, isMine ? styles.myBubble : styles.theirBubble]}>
+          <Text style={styles.messageText}>{String(item.content)}</Text>
+          <Text style={[styles.messageTime, isMine ? styles.myTime : styles.theirTime]}>{formattedTime}</Text>
+        </View>
       </View>
-      <Text style={styles.messageTime}>{formattedTime}</Text>
-    </View>
-  );
+    );
   };
 
   if (loading) {
@@ -125,25 +135,31 @@ export default function PrivateChat() {
   }
 
   return (
-  // 🛡️ O SafeAreaView garante que nada suba na câmera ou desça nos botões do Xiaomi
     <View style={[styles.container, { paddingTop: Platform.OS === 'android' ? 35 : 0 }]}>
-      {/* 💡 A StatusBar garante que o conteúdo do chat não brigue com os ícones de bateria/relógio */}
       <StatusBar style="light" backgroundColor="#202024" translucent={false} />
-     <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
-      {/* Header Customizado */}
+
+      {/* 👑 HEADER PREMIUM DINÂMICO */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>🔒 Chat de Apoio Realtime</Text>
-        <View style={styles.spacer} />
+        
+        <View style={styles.headerInfoContainer}>
+          <Text style={styles.headerTitle}>{partnerNickname || 'Irmão Anônimo'}</Text>
+          <Text style={styles.headerSubtitle} numberOfLines={1}>
+            💬 Fórum: {chatInfo?.topic.title || 'Carregando contexto...'}
+          </Text>
+        </View>
+
+        {/* Círculo com iniciais discreto no header */}
+        <View style={styles.headerAvatar}>
+          <Text style={styles.headerAvatarText}>
+            {partnerNickname ? String(partnerNickname).substring(0, 2).toUpperCase() : 'AN'}
+          </Text>
+        </View>
       </View>
 
-      {/* Linha do Tempo */}
+      {/* LINHA DO TEMPO */}
       <FlatList
         data={messages}
         keyExtractor={(item) => item.id}
@@ -152,54 +168,111 @@ export default function PrivateChat() {
         showsVerticalScrollIndicator={false}
       />
 
-      {/* Barra de Input */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Escreva uma mensagem de apoio..."
-          placeholderTextColor="#666"
-          value={newMessage}
-          onChangeText={setNewMessage}
-          multiline
-        />
-        <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
-          <Ionicons name="send" size={20} color="#FFF" />
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+      {/* BARRA DE INPUT PREMIUM COM SOMBRA */}
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Escreva uma mensagem de apoio..."
+            placeholderTextColor="#7C7C8A"
+            value={newMessage}
+            onChangeText={setNewMessage}
+            multiline
+          />
+          <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage} activeOpacity={0.8}>
+            <Ionicons name="send" size={18} color="#FFF" />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
-
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#121214' },
   loadingContainer: { flex: 1, backgroundColor: '#121214', justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#202024', height: 60, paddingHorizontal: 16, borderBottomWidth: 1, borderColor: '#323238', marginTop: Platform.OS === 'ios' ? 40 : 0 },
-  backButton: { padding: 4 },
-  headerTitle: { color: '#FFF', fontSize: 16, fontWeight: 'bold', textAlign: 'center', flex: 1 },
-  spacer: { width: 24 },
-  messagesList: { padding: 16, paddingBottom: 24 },
-  messageWrapper: { marginBottom: 16, maxWidth: '80%' },
-  myMessageWrapper: { alignSelf: 'flex-end', alignItems: 'flex-end' },
-  theirMessageWrapper: { alignSelf: 'flex-start', alignItems: 'flex-start' },
-  senderName: { color: '#00B37E', fontSize: 12, fontWeight: '600', marginBottom: 4, marginLeft: 4 },
-  messageBubble: { borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10 },
-  myBubble: { backgroundColor: '#00B37E', borderBottomRightRadius: 0 },
-  theirBubble: { backgroundColor: '#202024', borderWidth: 1, borderColor: '#323238', borderBottomLeftRadius: 0 },
-  messageText: { color: '#FFF', fontSize: 15, lineHeight: 20 },
-  messageTime: { color: '#7C7C8A', fontSize: 10, marginTop: 4, marginHorizontal: 4 },
-  input: { flex: 1, backgroundColor: '#121214', color: '#FFF', borderRadius: 24, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10, fontSize: 15, maxHeight: 100, borderWidth: 1, borderColor: '#323238' },
-  sendButton: { backgroundColor: '#00B37E', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginLeft: 12 },
-    inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#202024',
-    borderTopWidth: 1,
-    borderTopColor: '#323238',
-    
-    // 🛠️ Calibragem cirúrgica para o input subir e desgrudar dos botões do Xiaomi
-    paddingBottom: Platform.OS === 'android' ? 24 : 12, 
+  
+  // Header Premium
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#202024', 
+    height: 64, 
+    paddingHorizontal: 16, 
+    borderBottomWidth: 1, 
+    borderColor: '#323238', 
+    marginTop: Platform.OS === 'ios' ? 40 : 0 
   },
+  backButton: { padding: 4 },
+  headerInfoContainer: { flex: 1, marginLeft: 12, justifyContent: 'center' },
+  headerTitle: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  headerSubtitle: { color: '#00B37E', fontSize: 11, fontWeight: '600', marginTop: 2, maxWidth: '90%' },
+  headerAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#1A3F30', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#00B37E' },
+  headerAvatarText: { color: '#00B37E', fontWeight: 'bold', fontSize: 12 },
+
+  // Lista e Balões de Mensagem
+  messagesList: { padding: 16, paddingBottom: 24 },
+  messageWrapper: { marginBottom: 12, maxWidth: '82%' },
+  myMessageWrapper: { alignSelf: 'flex-end' },
+  theirMessageWrapper: { alignSelf: 'flex-start' },
+  
+  messageBubble: { 
+    borderRadius: 16, 
+    paddingHorizontal: 14, 
+    paddingVertical: 10,
+    position: 'relative'
+  },
+  // ⚡ Design "Bicudo" de Canto Arredondado Profissional
+  myBubble: { 
+    backgroundColor: '#00B37E', 
+    borderTopRightRadius: 4, // Canto suavizado na ponta interna
+  },
+  theirBubble: { 
+    backgroundColor: '#202024', 
+    borderWidth: 1, 
+    borderColor: '#323238', 
+    borderTopLeftRadius: 4, 
+  },
+  
+  messageText: { color: '#FFF', fontSize: 15, lineHeight: 20 },
+  messageTime: { fontSize: 10, alignSelf: 'flex-end', marginTop: 4 },
+  myTime: { color: '#E1E1E6' },
+  theirTime: { color: '#7C7C8A' },
+
+  // Input Container
+  inputContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingHorizontal: 16,
+    paddingVertical: 12, 
+    backgroundColor: '#202024', 
+    borderTopWidth: 1, 
+    borderColor: '#323238',
+    paddingBottom: Platform.OS === 'android' ? 24 : 12,
+  },
+  input: { 
+    flex: 1, 
+    backgroundColor: '#121214', 
+    color: '#FFF', 
+    borderRadius: 22, 
+    paddingHorizontal: 16, 
+    paddingTop: 10, 
+    paddingBottom: 10, 
+    fontSize: 15, 
+    maxHeight: 100, 
+    borderWidth: 1, 
+    borderColor: '#323238' 
+  },
+  sendButton: { 
+    backgroundColor: '#00B37E', 
+    width: 42, 
+    height: 42, 
+    borderRadius: 21, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginLeft: 12 
+  }
 });
