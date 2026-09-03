@@ -196,6 +196,31 @@ export default function Feed() {
     });
   }
 
+  async function handleDeleteMyTopic(topicId: string) {
+  const executeDeletion = async () => {
+      try {
+        await api.delete(`/topics/${topicId}`);
+        showAlert({
+          title: 'Desabafo Removido',
+          description: 'Seu desabafo e todas as mensagens privadas atreladas a ele foram apagadas para sempre.'
+        });
+        handleRefresh(); // Recarrega o feed na hora
+      } catch (error) {
+        showAlert({ title: 'Erro', description: 'Não foi possível apagar o seu desabafo agora.' });
+      }
+    };
+
+    showAlert({
+      title: 'Apagar Desabafo',
+      description: 'Tem certeza que deseja remover este desabafo permanentemente? Essa ação também apagará todas as conversas privadas iniciadas nele.',
+      confirmText: 'Apagar',
+      cancelText: 'Cancelar',
+      isDestructive: true,
+      onConfirm: executeDeletion
+    });
+  }
+
+
   const renderItem = ({ item }: { item: Topic }) => {
     const isMyOwnPost = item.authorId === user?.id;
 
@@ -215,8 +240,23 @@ export default function Feed() {
             <View style={styles.categoryBadge}>
               <Text style={styles.categoryText}>{item.category}</Text>
             </View>
-            {!isMyOwnPost && (
-              <TouchableOpacity style={styles.reportButton} onPress={() => handleReportTopic(item.id)}>
+
+            {/* 🗑️ BOTÃO DE DELETAR O PRÓPRIO POST */}
+            {isMyOwnPost ? (
+              <TouchableOpacity 
+                style={styles.reportButton} 
+                onPress={() => handleDeleteMyTopic(item.id)}
+                activeOpacity={0.6}
+              >
+                <Ionicons name="trash-outline" size={16} color="#7C7C8A" />
+              </TouchableOpacity>
+            ) : (
+              /* 🏳️ Botão de Denúncia existente */
+              <TouchableOpacity 
+                style={styles.reportButton} 
+                onPress={() => handleReportTopic(item.id)}
+                activeOpacity={0.6}
+              >
                 <Ionicons name="flag-outline" size={16} color="#7C7C8A" />
               </TouchableOpacity>
             )}
