@@ -19,12 +19,10 @@ export default function TabsLayout() {
           fontSize: 18,
           letterSpacing: 0.5,
         },
-       tabBarStyle: {
+        tabBarStyle: {
           backgroundColor: '#121214',
           borderTopWidth: 1,
           borderTopColor: '#202024',
-          
-          // 🛠️ Calibração de altura cirúrgica para cada plataforma
           ...Platform.select({
             web: {
               height: 56,
@@ -36,9 +34,9 @@ export default function TabsLayout() {
               paddingBottom: 28,
               paddingTop: 10,
             },
-           android: {
-              height: 76,          // 🤖 Aumentamos para 76 para dar fôlego
-              paddingBottom: 20,   // 🤖 Aumentamos o padding para o texto subir e ficar longe dos botões do celular
+            android: {
+              height: 76,
+              paddingBottom: 20,
               paddingTop: 10,
             }
           }),
@@ -48,11 +46,11 @@ export default function TabsLayout() {
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
-          marginTop: Platform.OS === 'android' ? 2 : 4, // Alinha o texto logo abaixo do ícone
+          marginTop: Platform.OS === 'android' ? 2 : 4,
         },
       }}
     >
-      {/* 1. Feed */}
+      {/* 1. Feed Principal */}
       <Tabs.Screen
         name="index"
         options={{
@@ -69,7 +67,7 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 2. Conversas */}
+      {/* 2. Caixa de Entrada Privada */}
       <Tabs.Screen
         name="chats"
         options={{
@@ -86,7 +84,7 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 3. Perfil */}
+      {/* 3. Refúgio do Perfil */}
       <Tabs.Screen
         name="profile"
         options={{
