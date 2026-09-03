@@ -10,7 +10,6 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
-  // Lê do localStorage se for Web, ou do SecureStore se for celular
   const token = Platform.OS === 'web' 
     ? localStorage.getItem('brotherhood_token')
     : await SecureStore.getItemAsync('brotherhood_token');
@@ -20,4 +19,6 @@ api.interceptors.request.use(async (config) => {
   }
   
   return config;
+}, (error) => {
+  return Promise.reject(error);
 });
