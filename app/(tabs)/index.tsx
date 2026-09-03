@@ -86,6 +86,40 @@ export default function Feed() {
     }
   }
 
+  async function handleReportTopic(topicId: string) {
+  // 1. Função interna isolada que faz o disparo para a API do Back
+  const submitReport = async () => {
+    try {
+      await api.post('/topics/report', {
+        topicId,
+        reason: 'Denúncia de Conteúdo Inapropriado / Ofensivo' // Motivo padrão comercial robusto
+      });
+
+      showAlert({
+        title: 'Conteúdo Reportado',
+        description: 'Obrigado por nos ajudar a manter a irmandade segura. Nossa moderação analisará este desabafo em breve.'
+      });
+    } catch (error: any) {
+      const apiError = error.response?.data?.error || 'Não foi possível processar a denúncia.';
+      showAlert({
+        title: 'Aviso',
+        description: apiError
+      });
+    }
+  };
+
+  // 2. Dispara o useAlert com o botão de Cancelar (Rota de Fuga) ativo e funcional!
+  showAlert({
+    title: 'Denunciar Desabafo',
+    description: 'Tem certeza que deseja denunciar este desabafo por violação das diretrizes da comunidade?',
+    confirmText: 'Denunciar',
+    cancelText: 'Cancelar / Voltar', 
+    isDestructive: true,
+    onConfirm: submitReport 
+  });
+  }
+
+
   const renderItem = ({ item }: { item: Topic }) => {
     const isMyOwnPost = item.authorId === user?.id;
 
@@ -121,6 +155,17 @@ export default function Feed() {
           <View style={styles.categoryBadge}>
             <Text style={styles.categoryText}>{item.category}</Text>
           </View>
+
+          {/* 🏳️ BOTÃO DE DENÚNCIA (Exibido apenas se o post NÃO for meu!) */}
+          {!isMyOwnPost && (
+            <TouchableOpacity 
+              style={styles.reportButton} 
+              onPress={() => handleReportTopic(item.id)}
+              activeOpacity={0.6}
+            >
+              <Ionicons name="flag-outline" size={16} color="#7C7C8A" />
+            </TouchableOpacity>
+          )}
         </View>
 
         <Text style={styles.cardTitle}>{item.title}</Text>
@@ -366,5 +411,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 6,
+  },
+    reportButton: {
+    padding: 6,
+    marginLeft: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
