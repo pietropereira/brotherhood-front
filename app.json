@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "brotherhoodfront",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
@@ -22,7 +22,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.pietro_pf.brotherhoodfront"
     },
     "web": {
       "bundler": "metro",
@@ -35,6 +36,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7a08b3d9-903c-4e1e-abcd-54faf5508d50"
+      }
+    },
+    "owner": "pietro_pf"
   }
 }
