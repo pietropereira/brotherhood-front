@@ -182,7 +182,7 @@ export default function Feed() {
     showAlert({
       title: 'Denunciar Desabafo',
       description: 'Tem certeza que deseja denunciar este desabafo por violação das diretrizes da comunidade?',
-      confirmText: 'Denunciar Conteúdo',
+      confirmText: 'Denunciar',
       cancelText: 'Cancelar / Voltar',
       isDestructive: true,
       onConfirm: submitReport
@@ -316,60 +316,230 @@ export default function Feed() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121214' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121214' },
-  categoriesWrapper: { backgroundColor: '#121214', borderBottomWidth: 1, borderBottomColor: '#202024', paddingVertical: 12 },
-  categoriesList: { paddingHorizontal: 16, gap: 8 },
-  categoryFilterButton: { backgroundColor: '#202024', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#323238' },
-  categoryFilterButtonSelected: { backgroundColor: '#00B37E', borderColor: '#00B37E' },
-  categoryFilterText: { color: '#7C7C8A', fontSize: 13, fontWeight: '600' },
-  categoryFilterTextSelected: { color: '#FFF' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#121214' 
+  },
+  loadingContainer: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: '#121214' 
+  },
+  categoriesWrapper: { 
+    backgroundColor: '#121214', 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#202024', 
+    paddingVertical: 14 
+  },
+  categoriesList: { 
+    paddingHorizontal: 16, 
+    gap: 10 
+  },
+  categoryFilterButton: { 
+    backgroundColor: '#202024', 
+    paddingHorizontal: 18, 
+    paddingVertical: 10, 
+    borderRadius: 24, 
+    borderWidth: 1, 
+    borderColor: '#323238' 
+  },
+  categoryFilterButtonSelected: { 
+    backgroundColor: '#00B37E', 
+    borderColor: '#00B37E' 
+  },
+  categoryFilterText: { 
+    color: '#7C7C8A', 
+    fontSize: 13, 
+    fontWeight: '700' 
+  },
+  categoryFilterTextSelected: { 
+    color: '#FFF' 
+  },
   
-  // 💊 Estilos da Pílula Flutuante Sênior
+  // 💊 Pílula Flutuante Sênior Ajustada
   floatingPill: {
     position: 'absolute',
-    top: 68, 
+    top: 72, 
     alignSelf: 'center',
     backgroundColor: '#00B37E',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 24,
     zIndex: 999,
     shadowColor: '#00B37E',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 6,
   },
   floatingPillText: {
     color: '#FFF',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 'bold',
     marginLeft: 6,
   },
 
-  listContainer: { padding: 16, paddingBottom: 80 },
-  card: { backgroundColor: '#202024', borderRadius: 8, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#323238' },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#1A3F30', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#00B37E' },
-  avatarText: { color: '#00B37E', fontWeight: 'bold', fontSize: 13 },
-  authorInfo: { flex: 1, marginLeft: 12 },
-  nickname: { color: '#FFF', fontSize: 14, fontWeight: 'bold' },
-  date: { color: '#7C7C8A', fontSize: 11, marginTop: 2 },
-  rightHeaderActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
-  categoryBadge: { backgroundColor: '#29292E', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: '#00B37E' },
-  categoryText: { color: '#00B37E', fontSize: 11, fontWeight: '600' },
-  reportButton: { paddingVertical: 4, paddingHorizontal: 8, marginLeft: 6 },
-  cardTitle: { color: '#FFF', fontSize: 16, fontWeight: 'bold', marginBottom: 8 },
-  cardContent: { color: '#C4C4CC', fontSize: 14, lineHeight: 20, marginBottom: 16 },
-  chatButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#29292E', height: 40, borderRadius: 6, borderWidth: 1, borderColor: '#323238' },
-  chatButtonText: { color: '#E1E1E6', fontSize: 13, fontWeight: '600', marginLeft: 8 },
-  myPostIndicator: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 40, backgroundColor: '#1A1A1E', borderRadius: 6, borderWidth: 1, borderColor: '#29292E', borderStyle: 'dashed' },
-  myPostIndicatorText: { color: '#7C7C8A', fontSize: 12, fontWeight: '500', marginLeft: 6 },
-  emptyContainer: { alignItems: 'center', justifyContent: 'center', marginTop: 60 },
-  emptyText: { color: '#7C7C8A', fontSize: 14, marginTop: 12, textAlign: 'center' },
-  footerLoading: { paddingVertical: 16, alignItems: 'center', justifyContent: 'center' },
-  fab: { position: 'absolute', bottom: 24, right: 24, backgroundColor: '#00B37E', width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', elevation: 6 }
+  listContainer: { 
+    padding: 16, 
+    paddingBottom: 100 // Dá mais fôlego para o scroll passar pelo FAB
+  },
+  
+  // 📝 CARDS PREMIUM REFINADOS
+  card: { 
+    backgroundColor: '#202024', 
+    borderRadius: 12, // Cantos mais arredondados e modernos
+    padding: 18, 
+    marginBottom: 16, 
+    borderWidth: 1, 
+    borderColor: '#29292E',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  cardHeader: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 14 
+  },
+  avatar: { 
+    width: 40, 
+    height: 40, 
+    borderRadius: 20, 
+    backgroundColor: '#1A3F30', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: '#00B37E' 
+  },
+  avatarText: { 
+    color: '#00B37E', 
+    fontWeight: 'bold', 
+    fontSize: 14 
+  },
+  authorInfo: { 
+    flex: 1, 
+    marginLeft: 12 
+  },
+  nickname: { 
+    color: '#FFF', 
+    fontSize: 15, 
+    fontWeight: 'bold',
+    letterSpacing: 0.2
+  },
+  date: { 
+    color: '#7C7C8A', 
+    fontSize: 11, 
+    marginTop: 2 
+  },
+  rightHeaderActions: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'flex-end' 
+  },
+  categoryBadge: { 
+    backgroundColor: '#1A2F26', // Verde escuro sutil de fundo
+    paddingHorizontal: 12, 
+    paddingVertical: 5, 
+    borderRadius: 6, 
+    borderWidth: 1, 
+    borderColor: '#00B37E' 
+  },
+  categoryText: { 
+    color: '#00B37E', 
+    fontSize: 11, 
+    fontWeight: '700',
+    textTransform: 'uppercase'
+  },
+  reportButton: { 
+    paddingVertical: 6, 
+    paddingHorizontal: 8, 
+    marginLeft: 8 
+  },
+  cardTitle: { 
+    color: '#FFF', 
+    fontSize: 17, // Título mais imponente
+    fontWeight: 'bold', 
+    marginBottom: 8,
+    lineHeight: 22
+  },
+  cardContent: { 
+    color: '#C4C4CC', 
+    fontSize: 14, 
+    lineHeight: 22, // Mais respiro para leitura de desabafos longos
+    marginBottom: 18 
+  },
+  
+  // Botões de Ação Inferiores do Card
+  chatButton: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    backgroundColor: '#29292E', 
+    height: 44, 
+    borderRadius: 8, 
+    borderWidth: 1, 
+    borderColor: '#323238' 
+  },
+  chatButtonText: { 
+    color: '#E1E1E6', 
+    fontSize: 14, 
+    fontWeight: '600', 
+    marginLeft: 8 
+  },
+  myPostIndicator: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    height: 44, 
+    backgroundColor: '#1A1A1E', 
+    borderRadius: 8, 
+    borderWidth: 1, 
+    borderColor: '#29292E', 
+    borderStyle: 'dashed' 
+  },
+  myPostIndicatorText: { 
+    color: '#7C7C8A', 
+    fontSize: 13, 
+    fontWeight: '500', 
+    marginLeft: 6 
+  },
+  
+  emptyContainer: { 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    marginTop: 80 
+  },
+  emptyText: { 
+    color: '#7C7C8A', 
+    fontSize: 14, 
+    marginTop: 12, 
+    textAlign: 'center' 
+  },
+  footerLoading: { 
+    paddingVertical: 16, 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
+  fab: { 
+    position: 'absolute', 
+    bottom: 24, 
+    right: 24, 
+    backgroundColor: '#00B37E', 
+    width: 60, 
+    height: 60, 
+    borderRadius: 30, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    elevation: 6,
+    shadowColor: '#00B37E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  }
 });
+
