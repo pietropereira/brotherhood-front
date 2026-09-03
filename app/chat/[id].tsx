@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -33,7 +33,6 @@ interface ChatDetails {
   participant: { nickname: string };
 }
 
-const socket = io('http://192.168.1.6:3334'); 
 
 export default function PrivateChat() {
   const { id: chatId } = useLocalSearchParams();
@@ -44,20 +43,27 @@ export default function PrivateChat() {
   const [chatInfo, setChatInfo] = useState<ChatDetails | null>(null); // Dados do header
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const flatListRef = useRef<FlatList>(null);
+  const socketRef = useRef<any>(null);
+  
 
   // Carrega o histórico e descobre as informações do Chat (para o Header dinâmico)
   async function loadChatData() {
     try {
-      // 1. Busca as mensagens
+      // 1. Busca as mensagens do chat (você já tem)
       const messagesResponse = await api.get(`/chats/${chatId}/messages`);
       setMessages(messagesResponse.data);
 
-      // 2. Busca os dados de contexto do chat (Bate no GET /chats/me e filtra o atual)
+      // 2. Busca o inbox para alimentar o header (você já tem)
       const inboxResponse = await api.get('/chats/me');
       const currentChat = inboxResponse.data.find((c: any) => c.id === chatId);
       if (currentChat) {
         setChatInfo(currentChat);
       }
+
+      // 🛡️ 3. GATILHO COMPLIANCE: Avisa o banco de dados que as mensagens deste chat foram lidas agora!
+      await api.patch(`/chats/${chatId}/read`);
+      
     } catch (error) {
       console.error('Erro ao carregar dados do chat:', error);
     } finally {
@@ -65,35 +71,72 @@ export default function PrivateChat() {
     }
   }
 
-  useEffect(() => {
-    loadChatData();
-    socket.emit('join_chat', chatId);
+useEffect(() => {
+  if (messages.length > 0) {
+    setTimeout(() => {
+      // Como está invertido, o offset 0 é a base real do chat!
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+    }, 80);
+  }
+}, [messages.length]);
 
-    socket.on('new_message', (message: Message) => {
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === message.id)) return prev;
-        return [...prev, message];
+
+
+    useEffect(() => {
+      loadChatData();
+
+      // 🔌 Cria a conexão física e guarda na referência persistente (não sofre com renders)
+      socketRef.current = io('http://192.168.1.6:3334', {
+        transports: ['websocket'],
+        upgrade: false
       });
-    });
 
-    return () => {
-      socket.off('new_message');
-    };
-  }, [chatId]);
-
-  async function handleSendMessage() {
-    if (!newMessage.trim()) return;
-
-    const textToSend = newMessage;
-    setNewMessage('');
-
-    try {
-      await api.post('/chats/message', {
-        chatId,
-        content: textToSend
+      // Só entra na sala após o aperto de mão estar ativo
+      socketRef.current.on('connect', () => {
+        console.log(`🟩 Conectado ao socket! Entrando na sala privada: ${chatId}`);
+        socketRef.current.emit('join_chat', chatId);
       });
-    } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
+
+      // Escuta e injeta a mensagem no array sem dar loops de desconexão
+      socketRef.current.on('new_message', (message: Message) => {
+        console.log('📩 Nova mensagem recebida dentro da sala privada:', message.content);
+        
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === message.id)) return prev;
+          
+          // 🔥 A CORREÇÃO DE OURO: Como a lista é invertida, a mensagem nova 
+          // DEVE entrar no começo (índice 0) do array para colar na base do chat!
+          return [message, ...prev]; 
+        });
+
+        api.patch(`/chats/${chatId}/read`).catch(() => {});
+      });
+
+      // ❌ SÓ DESCONECTA QUANDO O USUÁRIO SAIR DA TELA DE VERDADE
+      return () => {
+        if (socketRef.current) {
+          console.log('❌ Saindo da tela de chat e fechando conexão do socket.');
+          socketRef.current.off('new_message');
+          socketRef.current.disconnect();
+        }
+      };
+    }, []); // 👈 DEIXE O ARRAY DE DEPENDÊNCIAS VAZIO! Isso blinda contra re-renders na Web/Celular
+
+
+
+      async function handleSendMessage() {
+        if (!newMessage.trim()) return;
+
+        const textToSend = newMessage;
+        setNewMessage('');
+
+        try {
+          await api.post('/chats/message', {
+            chatId,
+            content: textToSend
+          });
+        } catch (error) {
+          console.error('Erro ao enviar mensagem:', error);
     }
   }
 
@@ -161,11 +204,14 @@ export default function PrivateChat() {
 
       {/* LINHA DO TEMPO */}
       <FlatList
+        ref={flatListRef}
         data={messages}
         keyExtractor={(item) => item.id}
         renderItem={renderMessageItem}
         contentContainerStyle={styles.messagesList}
         showsVerticalScrollIndicator={false}
+        inverted
+        extraData={messages}
       />
 
       {/* BARRA DE INPUT PREMIUM COM SOMBRA */}

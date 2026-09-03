@@ -1,9 +1,44 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Tabs, useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import { Platform } from 'react-native';
+import { useAuth } from '../../src/context/AuthContext';
+import { api } from '../../src/services/api';
 
 export default function TabsLayout() {
+  const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  // 🕵️‍♂️ Busca os chats e calcula quantos possuem pendência real de leitura pelo banco
+  async function checkUnreadMessages() {
+    if (!user?.id) return;
+
+    try {
+      const response = await api.get('/chats/me');
+      const chats = response.data;
+
+      // 🔥 Filtra e conta quantos canais de chat estão marcados com hasUnread === true
+      const totalUnread = chats.filter((chat: any) => chat.hasUnread === true).length;
+
+      setUnreadCount(totalUnread);
+    } catch (error) {
+      console.error('Erro ao calcular badges de mensagens:', error);
+    }
+  }
+
+  // 🔁 useFocusEffect: Atualiza instantaneamente ao mudar de aba + Polling de 10 segundos
+  useFocusEffect(
+    useCallback(() => {
+      checkUnreadMessages();
+
+      const interval = setInterval(() => {
+        checkUnreadMessages();
+      }, 10000);
+
+      return () => clearInterval(interval);
+    }, [user?.id])
+  );
+
   return (
     <Tabs
       screenOptions={{
@@ -74,6 +109,15 @@ export default function TabsLayout() {
           title: 'Conversas',
           headerTitle: '💬 Canais Privados',
           tabBarLabel: 'Conversas',
+          // 🔴 BADGE REAL INTELIGENTE: Acende apenas se o banco de dados acusar não lidos
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: '#F75A68',
+            color: '#FFF',
+            fontSize: 10,
+            fontWeight: 'bold',
+            lineHeight: 14,
+          },
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'chatbubbles' : 'chatbubbles-outline'} 
