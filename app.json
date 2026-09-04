@@ -23,7 +23,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.pietro_pf.brotherhoodfront"
+      "package": "com.pietro_pf.brotherhoodfront",
+      "usesCleartextTraffic": true,
     },
     "web": {
       "bundler": "metro",
